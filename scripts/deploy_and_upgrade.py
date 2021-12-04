@@ -1,5 +1,12 @@
-from brownie import network, Box, ProxyAdmin, TransparentUpgradeableProxy, Contract, BoxV2
-from scripts.helpful_scipts import encode_function_data, get_account
+from brownie import (
+    network,
+    Box,
+    ProxyAdmin,
+    TransparentUpgradeableProxy,
+    Contract,
+    BoxV2,
+)
+from scripts.helpful_scipts import encode_function_data, get_account, upgrade
 
 
 def main():
@@ -27,5 +34,11 @@ def main():
 
     # upgrade to v2
     box_v2 = BoxV2.deploy({"from": account})
-    upgrade()
-    
+    upgrade_transaction = upgrade(
+        account, proxy, box_v2.address, proxy_admin_contract=proxy_admin
+    )
+    upgrade_transaction.wait(1)
+    print("Proxy has been upgraded")
+    proxy_box = Contract.from_abi("BoxV2", proxy.address, BoxV2.abi)
+    proxy_box.increment({"from": account})
+    print(proxy_box.retrieve()) # returns 2 bc it has 1 from Box (v1) storage (see line 32)
